@@ -1,3 +1,33 @@
+from flask import Flask, request, jsonify, abort
+from flask_cors import CORS  # <-- add this
+
+app = Flask(__name__)
+
+# Allow exactly your web origin (change to your real static-site URL)
+CORS(app, resources={
+    r"/check": {
+        "origins": [
+            "https://actual-website-for-terasure-hunt.onrender.com",  # your site
+            "http://localhost:5500",  # optional: local testing
+            "http://127.0.0.1:5500"
+        ]
+    }
+})
+
+# If you want to be explicit about preflight:
+@app.after_request
+def add_cors_headers(resp):
+    resp.headers.setdefault("Vary", "Origin")
+    resp.headers.setdefault("Access-Control-Allow-Methods", "POST, OPTIONS")
+    resp.headers.setdefault("Access-Control-Allow-Headers", "Content-Type")
+    return resp
+
+@app.route("/check", methods=["POST", "OPTIONS"])
+def check():
+    if request.method == "OPTIONS":
+        return ("", 204)  # preflight OK
+    # ... your existing POST logic ...
+
 import os, json, time
 from flask import Flask, request, jsonify, abort
 
@@ -58,4 +88,5 @@ def health():
 if __name__ == "__main__":
     # Local dev
     app.run(host="0.0.0.0", port=5050, debug=True)
+
 
