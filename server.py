@@ -41,7 +41,7 @@ def check():
     code = str(data.get("code", "")).strip()
 
     # Basic format check (6 digits)
-    if not (code.isdigit() and len(code) => 6):
+    if not (code.isdigit() and len(code) >= 6):
         return jsonify({"ok": False, "reason": "bad_format"}), 200
 
     msg = ANSWERS.get(code)
@@ -58,3 +58,4 @@ def health():
 if __name__ == "__main__":
     # Local dev
     app.run(host="0.0.0.0", port=5050, debug=True)
+
