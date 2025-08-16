@@ -1,20 +1,12 @@
+# server.py
 from flask import Flask, request, jsonify, abort
-from flask_cors import CORS  # <-- add this
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/check": {"origins": [
+    "https://actual-website-for-terasure-hunt.onrender.com"
+]}})
 
-# Allow exactly your web origin (change to your real static-site URL)
-CORS(app, resources={
-    r"/check": {
-        "origins": [
-            "https://actual-website-for-terasure-hunt.onrender.com",  # your site
-            "http://localhost:5500",  # optional: local testing
-            "http://127.0.0.1:5500"
-        ]
-    }
-})
-
-# If you want to be explicit about preflight:
 @app.after_request
 def add_cors_headers(resp):
     resp.headers.setdefault("Vary", "Origin")
@@ -25,8 +17,26 @@ def add_cors_headers(resp):
 @app.route("/check", methods=["POST", "OPTIONS"])
 def check():
     if request.method == "OPTIONS":
-        return ("", 204)  # preflight OK
-    # ... your existing POST logic ...
+        return ("", 204)
+
+    data = request.get_json(silent=True) or {}
+    code = str(data.get("code", "")).strip()
+
+    # Accept only 6 or 7 digits
+    if not (code.isdigit() and len(code) in (6, 7)):
+        return jsonify({"ok": False, "reason": "bad_format"}), 200
+
+    # look up message from your ANSWERS dict (server-side secret)
+    msg = ANSWERS.get(code)
+    if not msg:
+        return jsonify({"ok": False}), 200
+
+    return jsonify({"ok": True, "message": msg}), 200
+
+@app.errorhandler(429)
+def ratelimited(e):
+    return jsonify({"ok": False, "reason": "rate_limited"}), 429
+
 
 import os, json, time
 from flask import Flask, request, jsonify, abort
@@ -88,5 +98,6 @@ def health():
 if __name__ == "__main__":
     # Local dev
     app.run(host="0.0.0.0", port=5050, debug=True)
+
 
 
